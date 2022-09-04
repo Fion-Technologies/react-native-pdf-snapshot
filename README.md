@@ -23,17 +23,24 @@ npm install react-native-pdf-snapshot
 ```js
 import PdfSnapshot from "react-native-pdf-snapshot";
 
-// For iOS, the filePath can be a file URL.
-// For Android, the filePath can be either a content URI, a file URI or an absolute path.
-const filePath = 'file:///mnt/sdcard/myDocument.pdf';
-const page = 0;
+const options = {
 
-// Optional: custom DPI (resolution), instead of the 72 that is used be default.
-const dpi = 144 / 72;
+  /// URL of the PDF
+  url: 'file:///mnt/sdcard/myDocument.pdf',
 
-// The hi-res image is stored in Documents directory, file uri is returned.
-// Image dimensions are also available to help you display it correctly.
-const { uri, width, height } = await PdfSnapshot.generate(filePath, page, dpi);
+  /// Optional: PDF page to snapshot
+  page: 0,
+
+  /// Optional: DPI (resolution) of output JPEG
+  dpi: 72,
+
+  /// Optional: Filename of output JPEG (without .jpg)
+  output: 'snapshot'
+
+};
+
+/// The hi-res image is stored in Documents directory, the file uri is returned.
+const { uri, width, height } = await PdfSnapshot.generate(options);
 
 ```
 

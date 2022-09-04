@@ -34,7 +34,7 @@ const options = {
   /// Optional: DPI (resolution) of output JPEG
   dpi: 72,
 
-  /// Optional: Path of output JPEG, to override default Documents directory and random filename behavior
+  /// Optional: Local path of output JPEG. Defaults to Documents directory with a random filename and the page number
   output: '/var/mobile/Containers/Data/Application/<APP_ID>/Library/Caches/image.jpg'
 
 };

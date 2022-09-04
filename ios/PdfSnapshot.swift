@@ -31,6 +31,10 @@ class PdfSnapshot: NSObject {
         if filename.pathExtension.count == 0 {
             filename = filename.appendingPathExtension("jpg")
         }
+        
+        if !filename.isFileURL {
+            filename = URL(fileURLWithPath: filename.absoluteString)
+        }
 
         return filename
     }

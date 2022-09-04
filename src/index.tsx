@@ -21,7 +21,7 @@ export type SnapshotOptions = {
   /// Optional: DPI (resolution). Defaults to 72.0
   dpi?: number;
 
-  /// Optional: output filename. Defaults to "fion-geopdf-<page_number>-<random_number>"
+  /// Optional: output file path. Defaults to Documents directory with the filename "fion-geopdf-<page_number>-<random_number>"
   output?: string;
 };
 

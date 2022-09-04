@@ -13,13 +13,23 @@ class PdfSnapshot: NSObject {
         return paths[0]
     }
     
-    func getOutputFilename(outputFileName: String) -> String {
-        return "\(outputFileName).jpg"
+    func getOutputFilePath(_ outputFileName: String, _ page: Int) -> String {
+        let filename = outputFileName
+        if filename.byTrimmingCharactersIn(CharacterSet.whitespacesAndNewlines).count === 0 {
+            let randomFilename = "fion-geopdf-\(page)-\(Int.random(in: 0 ..< Int.max)).jpg"
+            filename = getDocumentsDirectory().appendingPathComponent(randomFilename)
+        }
+        
+        if !filename.pathExtension {
+            filename = "\(filename).jpg"
+        }
+
+        return filename
     }
 
-    func generatePage(pdfPage: PDFPage, outputFileName: String, page: Int, dpi: Double) -> Dictionary<String, Any>? {
+    func generatePage(_ pdfPage: PDFPage, _ output: String, _ page: Int, _ dpi: Double) -> Dictionary<String, Any>? {
         /// Define destination path for the final JPEG image relative to the Documents directory.
-        let outputFile = getDocumentsDirectory().appendingPathComponent(getOutputFilename(outputFileName: outputFileName))
+        let outputFilePath = getOutputFilePath(outputFileName: output), page)
         
         /// Bounds for capturing the JPEG image, in this case, the entire bounds of the media of the PDF page.
         let pageRect = pdfPage.bounds(for: .mediaBox)
@@ -50,9 +60,9 @@ class PdfSnapshot: NSObject {
             /// Write high resolution JPEG data to outputFile path, the image size should match the pageRect.
             try data.write(to: outputFile)
 
-            /// Output dimensions of the final image and the local Image URI we generated using the Documents directory and getOutputFilename().
+            /// Output dimensions of the final image and the local Image URI we generated using the Documents directory and outputFilePath
             return [
-                "uri": outputFile.absoluteString,
+                "uri": outputFilePath.absoluteString,
                 "width": Int(scaledSize.width),
                 "height": Int(scaledSize.height),
             ]
@@ -97,9 +107,9 @@ class PdfSnapshot: NSObject {
         let dpi = config["dpi"] as? Double ?? 72.0
         
         /// Default Output Filename
-        let output = config["output"] as? String ?? "fion-geopdf-\(page)-\(Int.random(in: 0 ..< Int.max))"
+        let output = config["output"] as? String ?? ""
 
-        if let pageResult = generatePage(pdfPage: pdfPage, outputFileName: output, page: page, dpi: dpi) {
+        if let pageResult = generatePage(pdfPage, output, page, dpi) {
             resolve(pageResult)
         } else {
             reject("INTERNAL_ERROR", "Cannot write image data", nil)

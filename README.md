@@ -34,8 +34,8 @@ const options = {
   /// Optional: DPI (resolution) of output JPEG
   dpi: 72,
 
-  /// Optional: Filename of output JPEG (without .jpg)
-  output: 'snapshot'
+  /// Optional: Path of output JPEG, to override default Documents directory and random filename behavior
+  output: '/var/mobile/Containers/Data/Application/<APP_ID>/Library/Caches/image.jpg'
 
 };
 

@@ -13,15 +13,23 @@ class PdfSnapshot: NSObject {
         return paths[0]
     }
     
-    func getOutputFilePath(_ outputFileName: String, _ page: Int) -> String {
-        let filename = outputFileName
-        if filename.byTrimmingCharactersIn(CharacterSet.whitespacesAndNewlines).count === 0 {
+    func getOutputFilePath(_ outputFileName: String, _ page: Int) -> URL? {
+        let trimmedOutputFilename = outputFileName.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+        
+        var filename: URL
+        if trimmedOutputFilename.count == 0 {
             let randomFilename = "fion-geopdf-\(page)-\(Int.random(in: 0 ..< Int.max)).jpg"
             filename = getDocumentsDirectory().appendingPathComponent(randomFilename)
+        } else {
+            guard let validOutputFilename = URL(string: trimmedOutputFilename) else {
+                return nil
+            }
+            
+            filename = validOutputFilename
         }
         
-        if !filename.pathExtension {
-            filename = "\(filename).jpg"
+        if filename.pathExtension.count == 0 {
+            filename = filename.appendingPathExtension("jpg")
         }
 
         return filename
@@ -29,7 +37,9 @@ class PdfSnapshot: NSObject {
 
     func generatePage(_ pdfPage: PDFPage, _ output: String, _ page: Int, _ dpi: Double) -> Dictionary<String, Any>? {
         /// Define destination path for the final JPEG image relative to the Documents directory.
-        let outputFilePath = getOutputFilePath(outputFileName: output), page)
+        guard let outputPath = getOutputFilePath(output, page) else {
+            return nil
+        }
         
         /// Bounds for capturing the JPEG image, in this case, the entire bounds of the media of the PDF page.
         let pageRect = pdfPage.bounds(for: .mediaBox)
@@ -58,11 +68,11 @@ class PdfSnapshot: NSObject {
         
         do {
             /// Write high resolution JPEG data to outputFile path, the image size should match the pageRect.
-            try data.write(to: outputFile)
+            try data.write(to: outputPath)
 
             /// Output dimensions of the final image and the local Image URI we generated using the Documents directory and outputFilePath
             return [
-                "uri": outputFilePath.absoluteString,
+                "uri": outputPath.absoluteString,
                 "width": Int(scaledSize.width),
                 "height": Int(scaledSize.height),
             ]
@@ -94,14 +104,13 @@ class PdfSnapshot: NSObject {
             return
         }
         
+        /// Default Page Number
+        let page = config["page"] as? Int ?? 0
         
         guard let pdfPage = pdfDocument.page(at: page) else {
             reject("INVALID_PAGE", "Page number \(page) is invalid, file has \(pdfDocument.pageCount) pages", nil)
             return
         }
-        
-        /// Default Page Number
-        let page = config["page"] ?? 0
         
         /// Default DPI
         let dpi = config["dpi"] as? Double ?? 72.0

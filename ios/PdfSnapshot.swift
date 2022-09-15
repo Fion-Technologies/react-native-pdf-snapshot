@@ -44,16 +44,21 @@ class PdfSnapshot: NSObject {
             return nil
         }
         
-        let bounds = pdfPage.bounds(for: .cropBox)
+        let bounds = pdfPage.bounds(for: .bleedBox)
         let renderer = UIGraphicsImageRenderer(bounds: bounds, format: UIGraphicsImageRendererFormat.default())
         
         let image = renderer.image { (context) in
             context.cgContext.saveGState()
 
-            context.cgContext.translateBy(x: 0, y: bounds.height)
             context.cgContext.concatenate(CGAffineTransform.init(scaleX: 1, y: -1))
-            pdfPage.draw(with: .mediaBox, to: context.cgContext)
+            context.cgContext.translateBy(x: 0, y: -bounds.height)
 
+            
+            let mediaRect = page.getBoxRect(.cropBox)
+            context.cgContext.concatenate(CGAffineTransform.init(scaleX: bounds.width / mediaRect.size.width, y: bounds.height / mediaRect.size.height))
+            context.cgContext.translateBy(x: 0, y: bounds.height)
+            context.cgContext.drawPDFPage(page)
+            
             context.cgContext.restoreGState()
         }
         

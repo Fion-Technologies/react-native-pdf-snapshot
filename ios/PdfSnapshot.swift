@@ -40,26 +40,23 @@ class PdfSnapshot: NSObject {
     }
 
     func generatePage(_ pdfPage: PDFPage, _ output: String, _ page: Int) -> Dictionary<String, Any>? {
-        guard let outputPath = getOutputFilePath(output, page) else {
+        guard let outputPath = getOutputFilePath(output, page), let page = pdfPage.pageRef else {
             return nil
         }
         
-        let pageRect = pdfPage.bounds(for: .mediaBox)
-        let scale = UIScreen.main.scale
-        let scaledSize = CGSize(width: pageRect.size.width * scale, height: pageRect.size.height * scale)
+        let bounds = pdfPage.bounds(for: .cropBox)
+        let renderer = UIGraphicsImageRenderer(bounds: bounds, format: UIGraphicsImageRendererFormat.default())
         
-        /// Begin a rendering context with the size of the PDF page and the scale of our display to ensure it shows at the ideal resolution.
-        let renderer = UIGraphicsImageRenderer(size: scaledSize)
-        let image = renderer.image { ctx in
-            ctx.cgContext.scaleBy(x: scale, y: scale)
-            let destRect = CGRectMake(0, 0, scaledSize.width, scaledSize.height)
-            let drawingTransform = pdfPage.pageRef!.getDrawingTransform(.mediaBox, rect: destRect, rotate: 0, preserveAspectRatio: true)
-            ctx.cgContext.concatenate(drawingTransform)
-            ctx.cgContext.drawPDFPage(pdfPage.pageRef!)
-            pdfPage.draw(with: .mediaBox, to: ctx.cgContext)
+        let image = renderer.image { (context) in
+            context.cgContext.saveGState()
+
+            context.cgContext.translateBy(x: 0, y: bounds.height)
+            context.cgContext.concatenate(CGAffineTransform.init(scaleX: 1, y: -1))
+            pdfPage.draw(with: .mediaBox, to: context.cgContext)
+
+            context.cgContext.restoreGState()
         }
         
-        /// Safeguard to ensure we were able to convert the UIImage into valid JPEG Data (1.0 = no compression).
         guard let data = image.jpegData(compressionQuality: 1.0) else {
             return nil
         }
@@ -69,8 +66,8 @@ class PdfSnapshot: NSObject {
 
             return [
                 "uri": outputPath.absoluteString,
-                "width": Int(scaledSize.width),
-                "height": Int(scaledSize.height),
+                "width": Int(bounds.width),
+                "height": Int(bounds.height),
             ]
         } catch {
             return nil

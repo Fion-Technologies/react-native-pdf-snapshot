@@ -39,29 +39,23 @@ class PdfSnapshot: NSObject {
         return filename
     }
 
-    func generatePage(_ pdfPage: PDFPage, _ output: String, _ page: Int, _ dpi: Double) -> Dictionary<String, Any>? {
-        /// Define destination path for the final JPEG image relative to the Documents directory.
+    func generatePage(_ pdfPage: PDFPage, _ output: String, _ page: Int) -> Dictionary<String, Any>? {
         guard let outputPath = getOutputFilePath(output, page) else {
             return nil
         }
         
-        /// Bounds for capturing the JPEG image, in this case, the entire bounds of the media of the PDF page.
         let pageRect = pdfPage.bounds(for: .mediaBox)
-        
-        /// Use 144 pixels per inch DPI instead of the default 72
-        let scale = dpi / 72.0
+        let scale = UIScreen.main.scale
         let scaledSize = CGSize(width: pageRect.size.width * scale, height: pageRect.size.height * scale)
         
         /// Begin a rendering context with the size of the PDF page and the scale of our display to ensure it shows at the ideal resolution.
         let renderer = UIGraphicsImageRenderer(size: scaledSize)
         let image = renderer.image { ctx in
-            /// Align the PDF based on the default CGContext origin placement (move to top-left instead of starting off on center point).
-             ctx.cgContext.translateBy(x: 0, y: pageRect.size.height * scale)
-            
-            /// Flip the context as CGContext begin counting from bottom instead of top.
-            ctx.cgContext.scaleBy(x: scale, y: -scale)
-            
-            /// Draw the full media box of the PDF page at full resolution onto the current CGContext.
+            ctx.cgContext.scaleBy(x: scale, y: scale)
+            let destRect = CGRectMake(0, 0, scaledSize.width, scaledSize.height)
+            let drawingTransform = pdfPage.pageRef!.getDrawingTransform(.mediaBox, rect: destRect, rotate: 0, preserveAspectRatio: true)
+            ctx.cgContext.concatenate(drawingTransform)
+            ctx.cgContext.drawPDFPage(pdfPage.pageRef!)
             pdfPage.draw(with: .mediaBox, to: ctx.cgContext)
         }
         
@@ -71,10 +65,8 @@ class PdfSnapshot: NSObject {
         }
         
         do {
-            /// Write high resolution JPEG data to outputFile path, the image size should match the pageRect.
             try data.write(to: outputPath)
 
-            /// Output dimensions of the final image and the local Image URI we generated using the Documents directory and outputFilePath
             return [
                 "uri": outputPath.absoluteString,
                 "width": Int(scaledSize.width),
@@ -116,13 +108,10 @@ class PdfSnapshot: NSObject {
             return
         }
         
-        /// Default DPI
-        let dpi = config["dpi"] as? Double ?? 72.0
-        
         /// Default Output Filename
         let output = config["output"] as? String ?? ""
 
-        if let pageResult = generatePage(pdfPage, output, page, dpi) {
+        if let pageResult = generatePage(pdfPage, output, page) {
             resolve(pageResult)
         } else {
             reject("INTERNAL_ERROR", "Cannot write image data", nil)

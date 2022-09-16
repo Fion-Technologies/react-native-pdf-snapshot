@@ -43,41 +43,20 @@ class PdfSnapshot: NSObject {
         guard let outputPath = getOutputFilePath(output, page), let page = pdfPage.pageRef else {
             return nil
         }
-//
-//        guard  let url = pdfPage.document?.documentURL, let cfUrl = CFURLCreateWithString(kCFAllocatorDefault, url.absoluteString as CFString, nil) else {
-//            return nil
-//        }
-//
-        var mediaBox = page.getBoxRect(.mediaBox)
-        let renderer = UIGraphicsImageRenderer(size: mediaBox.size)
-        let data = renderer.jpegData(withCompressionQuality: 1.0, actions: { context in
-            let writeContext = context.cgContext
-            // let writeContext: CGContext = CGContext(cfUrl, mediaBox: nil, nil)!
-            writeContext.beginPage(mediaBox: &mediaBox)
-            let m = page.getDrawingTransform(.mediaBox, rect: mediaBox, rotate: 0, preserveAspectRatio: true)
-            writeContext.translateBy(x: 0.0, y: mediaBox.size.height)
-            writeContext.scaleBy(x: 1, y: -1)
-            writeContext.concatenate(m)
-            writeContext.drawPDFPage(page)
-            writeContext.endPage()
-            writeContext.closePDF()
-        })
-        
-//        guard let cgImage = contextImage else {
-//            return nil
-//        }
-//        let image = UIImage(cgImage: cgImage)
-//        guard let data = image.jpegData(compressionQuality: 1.0) else {
-//            return nil
-//        }
+
+        let bounds = pdfPage.bounds(for: .cropBox)
+        let thumbnail = pdfPage.thumbnail(of: bounds.applying(.init(scaleX: 2, y: 2)).size, for: .mediaBox)
+        guard let data = thumbnail.jpegData(compressionQuality: 1.0) else {
+            return nil
+        }
         
         do {
             try data.write(to: outputPath)
 
             return [
                 "uri": outputPath.absoluteString,
-                "width": Int(mediaBox.width),
-                "height": Int(mediaBox.height),
+                "width": Int(bounds.width),
+                "height": Int(bounds.height),
             ]
         } catch {
             return nil

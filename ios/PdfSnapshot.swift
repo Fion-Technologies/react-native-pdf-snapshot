@@ -43,36 +43,41 @@ class PdfSnapshot: NSObject {
         guard let outputPath = getOutputFilePath(output, page), let page = pdfPage.pageRef else {
             return nil
         }
+//
+//        guard  let url = pdfPage.document?.documentURL, let cfUrl = CFURLCreateWithString(kCFAllocatorDefault, url.absoluteString as CFString, nil) else {
+//            return nil
+//        }
+//
+        var mediaBox = page.getBoxRect(.mediaBox)
+        let renderer = UIGraphicsImageRenderer(size: mediaBox.size)
+        let data = renderer.jpegData(withCompressionQuality: 1.0, actions: { context in
+            let writeContext = context.cgContext
+            // let writeContext: CGContext = CGContext(cfUrl, mediaBox: nil, nil)!
+            writeContext.beginPage(mediaBox: &mediaBox)
+            let m = page.getDrawingTransform(.mediaBox, rect: mediaBox, rotate: 0, preserveAspectRatio: true)
+            writeContext.translateBy(x: 0.0, y: mediaBox.size.height)
+            writeContext.scaleBy(x: 1, y: -1)
+            writeContext.concatenate(m)
+            writeContext.drawPDFPage(page)
+            writeContext.endPage()
+            writeContext.closePDF()
+        })
         
-        let bounds = pdfPage.bounds(for: .bleedBox)
-        let renderer = UIGraphicsImageRenderer(bounds: bounds, format: UIGraphicsImageRendererFormat.default())
-        
-        let image = renderer.image { (context) in
-            context.cgContext.saveGState()
-
-            context.cgContext.concatenate(CGAffineTransform.init(scaleX: 1, y: -1))
-            context.cgContext.translateBy(x: 0, y: -bounds.height)
-
-            
-            let mediaRect = page.getBoxRect(.cropBox)
-            context.cgContext.concatenate(CGAffineTransform.init(scaleX: bounds.width / mediaRect.size.width, y: bounds.height / mediaRect.size.height))
-            context.cgContext.translateBy(x: 0, y: bounds.height)
-            context.cgContext.drawPDFPage(page)
-            
-            context.cgContext.restoreGState()
-        }
-        
-        guard let data = image.jpegData(compressionQuality: 1.0) else {
-            return nil
-        }
+//        guard let cgImage = contextImage else {
+//            return nil
+//        }
+//        let image = UIImage(cgImage: cgImage)
+//        guard let data = image.jpegData(compressionQuality: 1.0) else {
+//            return nil
+//        }
         
         do {
             try data.write(to: outputPath)
 
             return [
                 "uri": outputPath.absoluteString,
-                "width": Int(bounds.width),
-                "height": Int(bounds.height),
+                "width": Int(mediaBox.width),
+                "height": Int(mediaBox.height),
             ]
         } catch {
             return nil

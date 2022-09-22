@@ -15,6 +15,9 @@ export type SnapshotOptions = {
   /// File path or URL to the PDF image
   url: string;
 
+  /// Optional: output image scale, default to 2x
+  scale?: number;
+
   /// Optional: page number to snapshot. Default to 0
   page?: number;
 

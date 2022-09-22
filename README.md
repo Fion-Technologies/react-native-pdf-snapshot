@@ -28,6 +28,9 @@ const options = {
   /// URL of the PDF
   url: 'file:///mnt/sdcard/myDocument.pdf',
 
+  /// Optional: output image scale, default to 2x
+  scale: 2,
+
   /// Optional: PDF page to snapshot
   page: 0,
 

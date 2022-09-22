@@ -21,7 +21,7 @@ npm install react-native-pdf-snapshot
 ## Usage
 
 ```js
-import PdfSnapshot from "react-native-pdf-snapshot";
+import PdfSnapshot from "react-native-pdf-snapshot"
 
 const options = {
 
@@ -31,16 +31,19 @@ const options = {
   /// Optional: output image scale, default to 2x
   scale: 2,
 
-  /// Optional: PDF page to snapshot
+  /// Optional: output max image resolution, defaults to 0
+  max: number,
+
+  /// Optional: PDF page to snapshot, defaults to 0
   page: 0,
 
-  /// Optional: Local path of output JPEG. Defaults to Documents directory with a random filename and the page number
+  /// Optional: Local path of output JPEG, defaults to Documents directory with a random filename and the page number
   output: '/var/mobile/Containers/Data/Application/<APP_ID>/Library/Caches/image.jpg'
 
-};
+}
 
 /// The hi-res image is stored in Documents directory, the file uri is returned.
-const { uri, width, height } = await PdfSnapshot.generate(options);
+const { uri, width, height } = await PdfSnapshot.generate(options)
 
 ```
 

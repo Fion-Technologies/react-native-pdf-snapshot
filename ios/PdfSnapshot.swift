@@ -39,13 +39,20 @@ class PdfSnapshot: NSObject {
         return filename
     }
 
-    func generatePage(_ pdfPage: PDFPage, _ scale: CGFloat, _ output: String, _ page: Int) -> Dictionary<String, Any>? {
+    func generatePage(_ pdfPage: PDFPage, _ scale: CGFloat, _ max: CGFloat, _ output: String, _ page: Int) -> Dictionary<String, Any>? {
         guard let outputPath = getOutputFilePath(output, page), let page = pdfPage.pageRef else {
             return nil
         }
 
         let bounds = pdfPage.bounds(for: .cropBox)
-        let thumbnail = pdfPage.thumbnail(of: bounds.applying(.init(scaleX: scale, y: scale)).size, for: .mediaBox)
+        
+        var validScale = scale
+        if max > 0 {
+            let maxScale = min(max / bounds.width, max / bounds.height)
+            validScale = min(scale, maxScale)
+        }
+        
+        let thumbnail = pdfPage.thumbnail(of: bounds.applying(.init(scaleX: validScale, y: validScale)).size, for: .mediaBox)
         guard let data = thumbnail.jpegData(compressionQuality: 1.0) else {
             return nil
         }
@@ -99,8 +106,11 @@ class PdfSnapshot: NSObject {
 
         /// Default Ouput Scale
         let scale = config["scale"] as? CGFloat ?? 2.0
-
-        if let pageResult = generatePage(pdfPage, scale, output, page) {
+        
+        /// Default Max Resolution
+        let max = config["max"] as? CGFloat ?? 0
+        
+        if let pageResult = generatePage(pdfPage, scale, max, output, page) {
             resolve(pageResult)
         } else {
             reject("INTERNAL_ERROR", "Cannot write image data", nil)

@@ -43,7 +43,8 @@ const options = {
 }
 
 /// The hi-res image is stored in Documents directory, the file uri is returned.
-const { uri, width, height } = await PdfSnapshot.generate(options)
+const results = await PdfSnapshot.generate(options)
+const { uri, width, height } = results[0]
 
 ```
 

@@ -11,6 +11,8 @@ export type SnapshotResult = {
   height: number
 }
 
+export type SnapshotSplitResult = SnapshotResult[]
+
 export type SnapshotOptions = {
   /// File path or URL to the PDF image
   url: string
@@ -26,10 +28,13 @@ export type SnapshotOptions = {
 
   /// Optional: output file path, defaults to Documents directory with the filename "fion-geopdf-<page_number>-<random_number>"
   output?: string
+
+  /// Optional: disables the split mechanic, limiting the return value to only 1 result JPEG
+  disableSplit?: boolean
 }
 
 type PdfSnapshotType = {
-  generate(options: SnapshotOptions): Promise<SnapshotResult>
+  generate(options: SnapshotOptions): Promise<SnapshotSplitResult>
 }
 
 const { PdfSnapshot } = NativeModules

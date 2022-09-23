@@ -44,14 +44,6 @@ class PdfSnapshot: NSObject {
     let end = string.index(string.startIndex, offsetBy: endIndex)
     return String(string[start...end])
   }
-  
-  func cropImage(_ image: UIImage, _ cropRect: CGRect) -> UIImage? {
-    UIGraphicsBeginImageContextWithOptions(cropRect.size, false, image.scale)
-    image.draw(at: CGPoint(x: -cropRect.origin.x, y: -cropRect.origin.y))
-    let cropped = UIGraphicsGetImageFromCurrentImageContext()
-    UIGraphicsEndImageContext()
-    return cropped
-  }
 
   func generatePage(
     _ pdfPage: PDFPage,
@@ -117,7 +109,7 @@ class PdfSnapshot: NSObject {
     // snapshot the rects in the scaled JPEG
     var results: Array<Dictionary<String, Any>> = []
     for (index, splitRect) in splitRects.enumerated() {
-      guard let splitImage = cropImage(thumbnail, splitRect) else {
+      guard let splitImage = thumbnail.croppedImage(inRect: splitRect) else {
         continue
       }
       
@@ -200,4 +192,37 @@ class PdfSnapshot: NSObject {
       reject("INTERNAL_ERROR", "Cannot write image data", nil)
     }
   }
+}
+
+public extension UIImage {
+  
+  /// https://stackoverflow.com/a/48110726
+  func croppedImage(inRect rect: CGRect) -> UIImage? {
+    let rad: (Double) -> CGFloat = { deg in
+      return CGFloat(deg / 180.0 * .pi)
+    }
+    var rectTransform: CGAffineTransform
+    switch imageOrientation {
+    case .left:
+        let rotation = CGAffineTransform(rotationAngle: rad(90))
+        rectTransform = rotation.translatedBy(x: 0, y: -size.height)
+    case .right:
+        let rotation = CGAffineTransform(rotationAngle: rad(-90))
+        rectTransform = rotation.translatedBy(x: -size.width, y: 0)
+    case .down:
+        let rotation = CGAffineTransform(rotationAngle: rad(-180))
+        rectTransform = rotation.translatedBy(x: -size.width, y: -size.height)
+    default:
+        rectTransform = .identity
+    }
+    rectTransform = rectTransform.scaledBy(x: scale, y: scale)
+    let transformedRect = rect.applying(rectTransform)
+    guard let imageRef = cgImage?.cropping(to: transformedRect) else {
+      return nil
+    }
+    
+    let result = UIImage(cgImage: imageRef, scale: scale, orientation: imageOrientation)
+    return result
+  }
+  
 }

@@ -117,7 +117,7 @@ class PdfSnapshot: NSObject {
         continue
       }
       
-      let outputPathString = getSubstring(outputPath.absoluteString, 0, outputPath.absoluteString.count - 4)
+      let outputPathString = getSubstring(outputPath.absoluteString, 0, outputPath.absoluteString.count - 5)
       guard let splitImagePath = URL(string: "\(outputPathString)-split-\(index).jpg") else {
         continue
       }

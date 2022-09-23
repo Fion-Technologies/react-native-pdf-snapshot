@@ -54,7 +54,7 @@ class PdfSnapshot: NSObject {
     _ page: Int
   ) -> Array<Dictionary<String, Any>>? {
       
-    guard let outputPath = getOutputFilePath(output, page), let page = pdfPage.pageRef else {
+    guard let outputPath = getOutputFilePath(output, page) else {
         return nil
     }
 
@@ -94,6 +94,11 @@ class PdfSnapshot: NSObject {
     // calc 1st rect manually
     let splitAmountWidth = ceil((bounds.width * scale) / max)
     let splitAmountHeight = ceil((bounds.height * scale) / max)
+
+    if (splitAmountHeight <= 1 && splitAmountWidth <= 1) {
+      // no splits required
+      return generatePage(pdfPage, scale, max, true, output, page)
+    }
     
     let splitRectWidth = ceil((bounds.width * scale) / splitAmountWidth)
     let splitRectHeight = ceil((bounds.height * scale) / splitAmountHeight)

@@ -44,6 +44,14 @@ class PdfSnapshot: NSObject {
     let end = string.index(string.startIndex, offsetBy: endIndex)
     return String(string[start...end])
   }
+  
+  func cropImage(_ image: UIImage, _ cropRect: CGRect) -> UIImage? {
+    UIGraphicsBeginImageContextWithOptions(cropRect.size, false, image.scale)
+    image.draw(at: CGPoint(x: -cropRect.origin.x, y: -cropRect.origin.y))
+    let cropped = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
+    return cropped
+  }
 
   func generatePage(
     _ pdfPage: PDFPage,
@@ -109,11 +117,11 @@ class PdfSnapshot: NSObject {
     // snapshot the rects in the scaled JPEG
     var results: Array<Dictionary<String, Any>> = []
     for (index, splitRect) in splitRects.enumerated() {
-      guard let splitImage = thumbnail.cgImage?.cropping(to: splitRect) else {
+      guard let splitImage = cropImage(thumbnail, splitRect) else {
         continue
       }
       
-      guard let splitImageData = UIImage(cgImage: splitImage).jpegData(compressionQuality: 1.0) else {
+      guard let splitImageData = splitImage.jpegData(compressionQuality: 1.0) else {
         continue
       }
       

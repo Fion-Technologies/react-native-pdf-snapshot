@@ -100,8 +100,8 @@ class PdfSnapshot: NSObject {
       return generatePage(pdfPage, scale, max, true, output, page)
     }
     
-    let splitRectWidth = ceil((bounds.width * scale) / splitAmountWidth)
-    let splitRectHeight = ceil((bounds.height * scale) / splitAmountHeight)
+    let splitRectWidth = (bounds.width * scale) / splitAmountWidth
+    let splitRectHeight = (bounds.height * scale) / splitAmountHeight
 
     var splitRects: Array<CGRect> = [] // [CGRect(x: 0, y: 0, width: splitRectWidth, height: splitRectHeight)]
     for x in 0..<Int(splitAmountWidth) {
@@ -132,10 +132,10 @@ class PdfSnapshot: NSObject {
         
         let result: Dictionary<String, Any> = [
           "uri": splitImagePath.absoluteString,
-          "x": Int(splitRect.origin.x),
-          "y": Int(splitRect.origin.y),
-          "width": Int(splitRect.width),
-          "height": Int(splitRect.height),
+          "x": Float(splitRect.origin.x),
+          "y": Float(splitRect.origin.y),
+          "width": Float(splitRect.width),
+          "height": Float(splitRect.height),
         ]
         
         results.append(result)

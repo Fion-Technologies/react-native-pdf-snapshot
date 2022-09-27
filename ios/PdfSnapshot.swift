@@ -78,8 +78,8 @@ class PdfSnapshot: NSObject {
 
           let result = [[
             "uri": outputPath.absoluteString,
-            "width": Int(bounds.width),
-            "height": Int(bounds.height),
+            "width": "\(bounds.width)",
+            "height": "\(bounds.height)",
           ]]
 
           return result
@@ -132,10 +132,10 @@ class PdfSnapshot: NSObject {
         
         let result: Dictionary<String, Any> = [
           "uri": splitImagePath.absoluteString,
-          "x": Float(splitRect.origin.x),
-          "y": Float(splitRect.origin.y),
-          "width": Float(splitRect.width),
-          "height": Float(splitRect.height),
+          "x": "\(splitRect.origin.x)",
+          "y": "\(splitRect.origin.y)",
+          "width": "\(splitRect.width)",
+          "height": "\(splitRect.height)",
         ]
         
         results.append(result)

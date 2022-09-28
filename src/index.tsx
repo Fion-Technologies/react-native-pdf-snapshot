@@ -1,6 +1,17 @@
 import { NativeModules } from 'react-native'
 
 export type SnapshotResult = {
+  /// Total output width
+  width: number
+
+  /// Total output height
+  height: number
+  
+  /// All output images
+  images: SnapshotImage[] 
+}
+
+export type SnapshotImage = {
   /// Output URI of the snapshot, located in the Documents directory using the filename given in the generate options, randomly generated.
   uri: string
 
@@ -10,8 +21,6 @@ export type SnapshotResult = {
   /// Output height of the JPEG
   height: number
 }
-
-export type SnapshotSplitResult = SnapshotResult[]
 
 export type SnapshotOptions = {
   /// File path or URL to the PDF image
@@ -26,15 +35,18 @@ export type SnapshotOptions = {
   /// Optional: page number to snapshot, defaults to 0
   page?: number
 
-  /// Optional: output file path, defaults to Documents directory with the filename "fion-geopdf-<page_number>-<random_number>"
-  output?: string
+  /// Optional: output file path, defaults to Documents directory
+  outputPath?: string
+
+  /// Optional: output file name, defaults to "fion-geopdf-<page_number>-split-<split_number>"
+  outputFilename?: string
 
   /// Optional: disables the split mechanic, limiting the return value to only 1 result JPEG
   disableSplit?: boolean
 }
 
 type PdfSnapshotType = {
-  generate(options: SnapshotOptions): Promise<SnapshotSplitResult>
+  generate(options: SnapshotOptions): Promise<SnapshotResult>
 }
 
 const { PdfSnapshot } = NativeModules

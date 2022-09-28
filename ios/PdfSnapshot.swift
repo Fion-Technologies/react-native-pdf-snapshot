@@ -12,32 +12,6 @@ class PdfSnapshot: NSObject {
     let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
     return paths[0]
   }
-  
-  func getOutputFilePath(_ outputFileName: String, _ page: Int) -> URL? {
-    let trimmedOutputFilename = outputFileName.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
-    
-    var filename: URL
-    if trimmedOutputFilename.count == 0 {
-      let randomFilename = "fion-geopdf-\(page)-\(Int.random(in: 0 ..< Int.max)).jpg"
-      filename = getDocumentsDirectory().appendingPathComponent(randomFilename)
-    } else {
-      guard let validOutputFilename = URL(string: trimmedOutputFilename) else {
-        return nil
-      }
-        
-      filename = validOutputFilename
-    }
-    
-    if filename.pathExtension.count == 0 {
-      filename = filename.appendingPathExtension("jpg")
-    }
-    
-    if !filename.isFileURL {
-      filename = URL(fileURLWithPath: filename.absoluteString)
-    }
-
-    return filename
-  }
 
   func getSubstring(_ string: String, _ startIndex: Int, _ endIndex: Int) -> String {
     let start = string.index(string.startIndex, offsetBy: startIndex)
@@ -50,13 +24,9 @@ class PdfSnapshot: NSObject {
     _ scale: CGFloat,
     _ max: CGFloat,
     _ disableSplit: Bool,
-    _ output: String,
+    _ output: URL,
     _ page: Int
-  ) -> Array<Dictionary<String, Any>>? {
-      
-    guard let outputPath = getOutputFilePath(output, page) else {
-        return nil
-    }
+  ) -> Dictionary<String, Any>? {
 
     let bounds = pdfPage.bounds(for: .cropBox)
     
@@ -68,40 +38,48 @@ class PdfSnapshot: NSObject {
         validScale = min(scale, maxScale)
       }
       
-      let thumbnail = pdfPage.thumbnail(of: bounds.applying(.init(scaleX: validScale, y: validScale)).size, for: .mediaBox)
+      let thumbnailSize = bounds.applying(.init(scaleX: validScale, y: validScale)).size
+      let thumbnail = pdfPage.thumbnail(of: thumbnailSize, for: .mediaBox)
       guard let data = thumbnail.jpegData(compressionQuality: 1.0) else {
         return nil
       }
       
       do {
-          try data.write(to: outputPath)
+          try data.write(to: output)
 
-          let result = [[
-            "uri": outputPath.absoluteString,
-            "width": "\(bounds.width)",
-            "height": "\(bounds.height)",
-          ]]
-
-          return result
+          let image = [
+            "uri": output.absoluteString,
+            "x": "0",
+            "y": "0",
+            "width": "\(thumbnailSize.width)",
+            "height": "\(thumbnailSize.height)",
+          ]
+        
+          return [
+            "width": "\(thumbnailSize.width)",
+            "height": "\(thumbnailSize.height)",
+            "images": [image]
+          ]
       } catch {
           return nil
       }
     }
 
     // split pdf into jpeg elements based on target scale
-    let thumbnail = pdfPage.thumbnail(of: bounds.applying(.init(scaleX: scale, y: scale)).size, for: .mediaBox)
+    let thumbnailSize = bounds.applying(.init(scaleX: scale, y: scale)).size
+    let thumbnail = pdfPage.thumbnail(of: thumbnailSize, for: .mediaBox)
 
     // calc 1st rect manually
-    let splitAmountWidth = ceil((bounds.width * scale) / max)
-    let splitAmountHeight = ceil((bounds.height * scale) / max)
+    let splitAmountWidth = ceil(thumbnailSize.width / max)
+    let splitAmountHeight = ceil(thumbnailSize.height / max)
 
     if (splitAmountHeight <= 1 && splitAmountWidth <= 1) {
       // no splits required
       return generatePage(pdfPage, scale, max, true, output, page)
     }
     
-    let splitRectWidth = (bounds.width * scale) / splitAmountWidth
-    let splitRectHeight = (bounds.height * scale) / splitAmountHeight
+    let splitRectWidth = thumbnailSize.width / splitAmountWidth
+    let splitRectHeight = thumbnailSize.height / splitAmountHeight
 
     var splitRects: Array<CGRect> = [] // [CGRect(x: 0, y: 0, width: splitRectWidth, height: splitRectHeight)]
     for x in 0..<Int(splitAmountWidth) {
@@ -112,7 +90,7 @@ class PdfSnapshot: NSObject {
     }
 
     // snapshot the rects in the scaled JPEG
-    var results: Array<Dictionary<String, Any>> = []
+    var images: Array<Dictionary<String, Any>> = []
     for (index, splitRect) in splitRects.enumerated() {
       guard let splitImage = thumbnail.croppedImage(inRect: splitRect) else {
         continue
@@ -122,7 +100,7 @@ class PdfSnapshot: NSObject {
         continue
       }
       
-      let outputPathString = getSubstring(outputPath.absoluteString, 0, outputPath.absoluteString.count - 5)
+      let outputPathString = getSubstring(output.absoluteString, 0, output.absoluteString.count - 5)
       guard let splitImagePath = URL(string: "\(outputPathString)-split-\(index).jpg") else {
         continue
       }
@@ -130,7 +108,7 @@ class PdfSnapshot: NSObject {
       do {
         try splitImageData.write(to: splitImagePath)
         
-        let result: Dictionary<String, Any> = [
+        let image: Dictionary<String, Any> = [
           "uri": splitImagePath.absoluteString,
           "x": "\(splitRect.origin.x)",
           "y": "\(splitRect.origin.y)",
@@ -138,14 +116,17 @@ class PdfSnapshot: NSObject {
           "height": "\(splitRect.height)",
         ]
         
-        results.append(result)
+        images.append(image)
       } catch {
         continue
       }
     }
     
-    return results
-    
+    return [
+      "width": "\(thumbnailSize.width)",
+      "height": "\(thumbnailSize.height)",
+      "images": images
+    ]
   }
   
   @available(iOS 11.0, *)
@@ -180,8 +161,23 @@ class PdfSnapshot: NSObject {
     }
     
     /// Default Output Filename
-    let output = config["output"] as? String ?? ""
-
+    let outputPath = config["outputPath"] as? String ?? getDocumentsDirectory().absoluteString
+    let outputFilename = config["outputFilename"] as? String ?? "fion-geopdf-\(page).jpg"
+    var output = URL(string: outputPath)?.appendingPathComponent(outputFilename)
+    
+    guard var output = output else {
+      reject("INVALID_OUTPUT", "Output path or filename were invalid, \(outputPath) & \(outputFilename)", nil)
+      return
+    }
+    
+    if output.pathExtension.count == 0 {
+      output = output.appendingPathExtension("jpg")
+    }
+    
+    if !output.isFileURL {
+      output = URL(fileURLWithPath: output.absoluteString)
+    }
+    
     /// Default Ouput Scale
     let scale = config["scale"] as? CGFloat ?? 2.0
     

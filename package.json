@@ -1,6 +1,6 @@
 {
   "name": "react-native-pdf-snapshot",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Generate high-res snapshots of PDF files",
   "private": true,
   "main": "lib/commonjs/index.js",
@@ -23,7 +23,7 @@
     "typescript": "tsc --noEmit",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "prepare": "bob build",
-    "build": "yarn lint && yarn typescript && yarn prepare"
+    "build": "yarn typescript && yarn prepare"
   },
   "keywords": [
     "react-native",

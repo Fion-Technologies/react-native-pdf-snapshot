@@ -24,7 +24,6 @@ npm install react-native-pdf-snapshot
 import PdfSnapshot from "react-native-pdf-snapshot"
 
 const options = {
-
   /// URL of the PDF
   url: 'file:///mnt/sdcard/myDocument.pdf',
 
@@ -32,20 +31,24 @@ const options = {
   scale: 2,
 
   /// Optional: output max image resolution, defaults to 0
-  max: number,
+  max: 4096,
 
   /// Optional: PDF page to snapshot, defaults to 0
   page: 0,
 
-  /// Optional: Local path of output JPEG, defaults to Documents directory with a random filename and the page number
-  output: '/var/mobile/Containers/Data/Application/<APP_ID>/Library/Caches/image.jpg'
+  /// Optional: Local path of output JPEG, defaults to Documents directory 
+  outputPath: '/var/mobile/Containers/Data/Application/<APP_ID>/Library/Caches/',
 
+  /// Optional: Local filename of output JPEG, defaults to "fion-geopdf-<page_number>-split-<split_number>"
+  outputFilename: 'example.jpg',
+
+  /// Optional: Disable split mechanic to fit within the max image resolution even after rescaling
+  // disableSplit: false
 }
 
 /// The hi-res image is stored in Documents directory, the file uri is returned.
-const results = await PdfSnapshot.generate(options)
-const { uri, width, height } = results[0]
-
+const result = await PdfSnapshot.generate(options)
+const { uri, width, height } = result.images[0]
 ```
 
 ## Development

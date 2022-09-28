@@ -2,10 +2,10 @@ import { NativeModules } from 'react-native'
 
 export type SnapshotResult = {
   /// Total output width
-  width: number
+  width: string
 
   /// Total output height
-  height: number
+  height: string
   
   /// All output images
   images: SnapshotImage[] 
@@ -16,10 +16,10 @@ export type SnapshotImage = {
   uri: string
 
   /// Output width of the JPEG
-  width: number
+  width: string
 
   /// Output height of the JPEG
-  height: number
+  height: string
 }
 
 export type SnapshotOptions = {

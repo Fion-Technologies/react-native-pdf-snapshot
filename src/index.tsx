@@ -20,6 +20,12 @@ export type SnapshotImage = {
 
   /// Output height of the JPEG
   height: string
+
+  /// Output relative x offset of the JPEG
+  x: string
+
+  /// Output relative y offset of the JPEG
+  y: string
 }
 
 export type SnapshotOptions = {

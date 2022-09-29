@@ -1,6 +1,6 @@
 {
   "name": "react-native-pdf-snapshot",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Generate high-res snapshots of PDF files",
   "private": true,
   "main": "lib/commonjs/index.js",
